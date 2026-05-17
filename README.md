@@ -13,6 +13,9 @@ Instead of simple IP-based rules, it monitors **19 behavioral features** in real
 - 🚨 **Hijacked** (Risk Score 60+)
 
 
+## 🖥️ Admin Dashboard
+![Admin Dashboard](screenshots/AdminDashboard1.png)
+![Admin Dashboard](screenshots/AdminDashboard2.png)
 
 ## 🚀 Quick Start (Step-by-Step)
 
