@@ -1,23 +1,33 @@
 # 🛡️ SessionSentry
 ### AI-Based Behavioral Session Hijacking Detection Framework
 
-
-
-## 📌 What Is This?
-
 SessionSentry is a complete AI-powered cybersecurity monitoring system that detects **session hijacking attacks** using behavioral analysis and Machine Learning (Random Forest).
 
 Instead of simple IP-based rules, it monitors **19 behavioral features** in real-time and uses an ML model to classify sessions as:
-- ✅ **Normal** (Risk Score 0–30)
-- ⚠️ **Suspicious** (Risk Score 30–60)
-- 🚨 **Hijacked** (Risk Score 60+)
+- **Normal** (Risk Score 0–30)
+- **Suspicious** (Risk Score 30–60)
+- **Hijacked** (Risk Score 60+)
 
 
-## 🖥️ Admin Dashboard
+## Admin Dashboard
 ![Admin Dashboard](screenshots/AdminDashboard1.png)
 ![Admin Dashboard](screenshots/AdminDashboard2.png)
 
-## 🚀 Quick Start (Step-by-Step)
+## Alerts
+![Alerts](screenshots/Alerts.png)
+
+## Sessions
+![Sessions](screenshots/Sessions.png)
+
+## Behavioural_Features
+![Behavioural_Features](screenshots/Behavioural_Features.png)
+
+## Victim Dashboard
+![Victim Dashboard](screenshots/Victim Dashboard.png)
+
+
+
+## Quick Start (Step-by-Step)
 
 ### Prerequisites
 - Python 3.9+ installed
@@ -109,7 +119,7 @@ python app.py
 
 
 
-## 🎭 Demo: Simulate a Hijacking Attack
+## Demo: Simulate a Hijacking Attack
 
 ### Method 1: Built-in Simulator (Easiest)
 1. Log in as **admin**
@@ -123,7 +133,7 @@ python app.py
 See `attacks/burp_simulation_notes.txt` for detailed instructions.
 
 
-## 🧠 ML Features (19 Total)
+## ML Features (19 Total)
 
 | Category | Features |
 |----------|----------|
@@ -136,7 +146,7 @@ See `attacks/burp_simulation_notes.txt` for detailed instructions.
 
 
 
-## 🔍 How Detection Works
+## How Detection Works
 
 
 User Request Arrives
@@ -156,16 +166,6 @@ If Hijacked:
   → Create alert
   → Show in admin dashboard
 
-
-## 🛑 Troubleshooting
-
-| Problem | Solution |
-|---------|----------|
-| `ModuleNotFoundError: flask` | Run: `pip install flask` |
-| `No module named 'sklearn'` | Run: `pip install scikit-learn` |
-| `rf_model.pkl not found` | Run: `python ml/train_model.py` first |
-| Port 5000 already in use | Change port in `app.py`: `app.run(port=5001)` |
-| Database error | Delete `database/database.db` and restart |
 
 
 *Built with Flask, SQLite, scikit-learn Random Forest, Chart.js*
