@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Sessions — SessionSentry{% endblock %}
+{% block page_title %}Session Management{% endblock %}
+
+{% block content %}
+<div class="card card-full-width">
+  <div class="card-header">
+    <span class="card-title"><i class="fas fa-users"></i> All Sessions</span>
+    <div class="filter-tabs">
+      <a href="?filter=all" class="filter-tab {% if filter_type=='all' %}active{% endif %}">All</a>
+      <a href="?filter=active" class="filter-tab {% if filter_type=='active' %}active{% endif %}">Active</a>
+      <a href="?filter=hijacked" class="filter-tab {% if filter_type=='hijacked' %}active{% endif %}">Hijacked</a>
+      <a href="?filter=suspicious" class="filter-tab {% if filter_type=='suspicious' %}active{% endif %}">Suspicious</a>
+    </div>
+  </div>
+  <div class="card-body">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Session ID</th><th>User</th><th>IP</th><th>Browser</th>
+          <th>Login Time</th><th>Duration</th><th>Risk</th><th>Status</th><th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in sessions_page.rows %}
+        <tr class="{% if s.is_hijacked %}row-danger{% elif s.risk_score >= 30 %}row-warning{% endif %}">
+          <td class="mono small">{{ s.session_id }}</td>
+          <td>{{ s.username or '—' }}</td>
+          <td class="mono">{{ s.ip_address }}</td>
+          <td>{{ s.browser }} / {{ s.os_info }}</td>
+          <td>{{ s.login_time[:16] if s.login_time else '—' }}</td>
+          <td>
+            {% if s.is_active %}
+              <span class="live-tag">Live</span>
+            {% elif s.logout_time %}
+              {{ s.logout_time[:16] }}
+            {% else %}—{% endif %}
+          </td>
+          <td>
+            <span class="risk-chip {% if s.risk_score >= 60 %}chip-danger{% elif s.risk_score >= 30 %}chip-warning{% else %}chip-safe{% endif %}">
+              {{ s.risk_score | round(0) | int }}
+            </span>
+          </td>
+          <td>
+            {% if s.is_hijacked %}<span class="status-badge badge-danger">Hijacked</span>
+            {% elif s.is_active %}<span class="status-badge badge-safe">Active</span>
+            {% else %}<span class="status-badge badge-neutral">Closed</span>{% endif %}
+          </td>
+          <td>
+            {% if s.is_active %}
+            <button class="btn-xs btn-danger" onclick="terminateSession('{{ s.session_id }}', this)">
+              <i class="fas fa-ban"></i>
+            </button>
+            {% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="9" class="empty-row">No sessions found</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    {% if sessions_page.pages > 1 %}
+    <div class="pagination">
+      {% if sessions_page.has_prev %}<a href="?page={{ sessions_page.prev_num }}&filter={{ filter_type }}" class="page-btn">‹ Prev</a>{% endif %}
+      <span class="page-info">Page {{ sessions_page.page }} of {{ sessions_page.pages }}</span>
+      {% if sessions_page.has_next %}<a href="?page={{ sessions_page.next_num }}&filter={{ filter_type }}" class="page-btn">Next ›</a>{% endif %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function terminateSession(sessId, btn) {
+  if (!confirm('Terminate this session?')) return;
+  fetch(`/admin/terminate-session/${sessId}`, { method: 'POST' })
+  .then(r => r.json())
+  .then(() => { btn.closest('tr').style.opacity = '0.4'; btn.disabled = true; });
+}
+</script>
+{% endblock %}

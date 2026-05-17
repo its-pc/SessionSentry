@@ -1,0 +1,403 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard — SessionSentry{% endblock %}
+{% block page_title %}Security Overview{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block content %}
+
+<div class="stats-row">
+  <div class="stat-card">
+    <div class="stat-icon green"><i class="fas fa-users"></i></div>
+    <div class="stat-body">
+      <div class="stat-value">{{ active_sessions }}</div>
+      <div class="stat-label">Active Sessions</div>
+    </div>
+    <div class="stat-trend up"><i class="fas fa-circle-dot"></i> Live</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon red"><i class="fas fa-skull-crossbones"></i></div>
+    <div class="stat-body">
+      <div class="stat-value" id="hijacked-count">{{ hijacked_count }}</div>
+      <div class="stat-label">Hijacked Sessions</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon orange"><i class="fas fa-triangle-exclamation"></i></div>
+    <div class="stat-body">
+      <div class="stat-value" id="unresolved-count">{{ unresolved }}</div>
+      <div class="stat-label">Unresolved Alerts</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon blue"><i class="fas fa-database"></i></div>
+    <div class="stat-body">
+      <div class="stat-value">{{ total_sessions }}</div>
+      <div class="stat-label">Total Sessions</div>
+    </div>
+  </div>
+</div>
+
+<div class="charts-row">
+  <div class="card chart-card">
+    <div class="card-header">
+      <span class="card-title"><i class="fas fa-chart-line"></i> Session Activity (7 Days)</span>
+    </div>
+    <div class="card-body">
+      <canvas id="sessionChart" height="220"></canvas>
+    </div>
+  </div>
+  <div class="card chart-card">
+    <div class="card-header">
+      <span class="card-title"><i class="fas fa-chart-pie"></i> Session Distribution</span>
+    </div>
+    <div class="card-body chart-donut-wrap">
+      <canvas id="donutChart" height="220"></canvas>
+    </div>
+  </div>
+</div>
+
+<div class="two-col-row">
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title"><i class="fas fa-satellite-dish"></i> Live Sessions</span>
+      <a href="{{ url_for('admin_sessions') }}" class="card-link">View all →</a>
+    </div>
+    <div class="card-body">
+      <table class="data-table">
+        <thead><tr><th>User</th><th>IP</th><th>Browser</th><th>Risk</th><th>Action</th></tr></thead>
+        <tbody id="live-sessions-body">
+          {% for s in active_sess %}
+          <tr data-session-id="{{ s.session_id }}">
+            <td>{{ s.username or '—' }}</td>
+            <td class="mono">{{ s.ip_address }}</td>
+            <td>{{ s.browser }}</td>
+            <td>
+              <span class="risk-chip {% if s.risk_score >= 60 %}chip-danger{% elif s.risk_score >= 30 %}chip-warning{% else %}chip-safe{% endif %}">
+                {{ s.risk_score | round(0) | int }}
+              </span>
+            </td>
+            <td>
+              <button class="btn-xs btn-danger" onclick="terminateSession('{{ s.session_id }}', this)">
+                <i class="fas fa-ban"></i>
+              </button>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="5" class="empty-row">No active sessions</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title"><i class="fas fa-bell"></i> Recent Alerts</span>
+      <a href="{{ url_for('admin_alerts') }}" class="card-link">View all →</a>
+    </div>
+    <div class="card-body" id="recent-alerts-body">
+      {% for alert in recent_alerts %}
+      <div class="alert-item {% if alert.resolved %}alert-resolved{% endif %}" data-alert-id="{{ alert.id }}">
+        <div class="alert-icon"><i class="fas fa-skull-crossbones"></i></div>
+        <div class="alert-body">
+          <div class="alert-header-row">
+            <span class="alert-user">{{ alert.username }}</span>
+            <span class="alert-score chip-danger">{{ alert.risk_score | round(0) | int }}</span>
+          </div>
+          <div class="alert-reason">{{ alert.reason[:80] }}{% if alert.reason|length > 80 %}…{% endif %}</div>
+          <div class="alert-time">{{ alert.timestamp[:16] if alert.timestamp else '—' }}</div>
+        </div>
+        {% if not alert.resolved %}
+        <button class="btn-xs btn-success" onclick="resolveAlert({{ alert.id }}, this)" title="Resolve">
+          <i class="fas fa-check"></i>
+        </button>
+        {% endif %}
+      </div>
+      {% else %}
+      <p class="empty-row">No alerts yet</p>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<div class="card card-full-width">
+  <div class="card-header">
+    <span class="card-title"><i class="fas fa-brain"></i> ML Performance</span>
+    <span class="card-meta">Model summary</span>
+  </div>
+  <div class="card-body">
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-icon blue"><i class="fas fa-bullseye"></i></div>
+        <div class="stat-body">
+          <div class="stat-value">{{ ml_metrics.accuracy | round(1) }}</div>
+          <div class="stat-label">Accuracy %</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon green"><i class="fas fa-check-double"></i></div>
+        <div class="stat-body">
+          <div class="stat-value">{{ ml_metrics.precision | round(1) }}</div>
+          <div class="stat-label">Precision %</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon orange"><i class="fas fa-rotate-right"></i></div>
+        <div class="stat-body">
+          <div class="stat-value">{{ ml_metrics.recall | round(1) }}</div>
+          <div class="stat-label">Recall %</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Simulation Control Section -->
+<div class="card card-full-width simulation-section">
+  <div class="simulation-title">
+    <i class="fas fa-biohazard"></i>
+    Attack Simulation Control
+    <i class="fas fa-robot"></i>
+  </div>
+  <div class="simulation-buttons">
+    <button class="sim-btn sim-btn-start" id="start-simulation">
+      <i class="fas fa-play"></i> Start Simulation
+    </button>
+    <button class="sim-btn sim-btn-stop" id="stop-simulation">
+      <i class="fas fa-stop"></i> Stop Simulation
+    </button>
+  </div>
+  <div id="simulation-status" class="sim-status sim-status-inactive">
+    <span class="sim-status-dot inactive"></span>
+    <span id="sim-status-text">Simulation INACTIVE - Detection is OFF</span>
+  </div>
+  <div class="settings-note" style="margin-top: 0.75rem;">
+    <i class="fas fa-circle-info"></i> 
+    When simulation is active, the system will generate synthetic hijack attempts and display them as alerts.
+    Detection runs in real-time ONLY when simulation is ON.
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Global simulation state
+let simulationActive = false;
+
+const chartData = {{ chart_data | safe }};
+
+// Initialize charts
+const lineCtx = document.getElementById('sessionChart').getContext('2d');
+new Chart(lineCtx, {
+  type: 'line',
+  data: {
+    labels: chartData.labels,
+    datasets: [
+      {
+        label: 'Normal',
+        data: chartData.normal,
+        borderColor: '#00ff88',
+        backgroundColor: 'rgba(0,255,136,0.08)',
+        tension: 0.4,
+        pointBackgroundColor: '#00ff88',
+        pointRadius: 4,
+        fill: true,
+      },
+      {
+        label: 'Hijacked',
+        data: chartData.hijacked,
+        borderColor: '#ff3b5c',
+        backgroundColor: 'rgba(255,59,92,0.08)',
+        tension: 0.4,
+        pointBackgroundColor: '#ff3b5c',
+        pointRadius: 4,
+        fill: true,
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { labels: { color: '#8a9bb5' } } },
+    scales: {
+      x: { ticks: { color: '#8a9bb5' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+      y: { ticks: { color: '#8a9bb5' }, grid: { color: 'rgba(255,255,255,0.05)' }, beginAtZero: true }
+    }
+  }
+});
+
+const total = {{ total_sessions }};
+const hijacked = {{ hijacked_count }};
+const normal = total - hijacked;
+const donutCtx = document.getElementById('donutChart').getContext('2d');
+new Chart(donutCtx, {
+  type: 'doughnut',
+  data: {
+    labels: ['Normal', 'Hijacked'],
+    datasets: [{
+      data: [normal || 1, hijacked],
+      backgroundColor: ['rgba(0,255,136,0.7)', 'rgba(255,59,92,0.7)'],
+      borderColor: ['#00ff88', '#ff3b5c'],
+      borderWidth: 2,
+    }]
+  },
+  options: {
+    responsive: true,
+    cutout: '70%',
+    plugins: { legend: { labels: { color: '#8a9bb5' } } }
+  }
+});
+
+function terminateSession(sessId, btn) {
+  if (!confirm('Terminate this session?')) return;
+  fetch(`/admin/terminate-session/${sessId}`, { method: 'POST' })
+  .then(r => r.json())
+  .then(() => { btn.closest('tr').style.opacity = '0.3'; btn.disabled = true; });
+}
+
+function resolveAlert(alertId, btn) {
+  fetch(`/admin/resolve-alert/${alertId}`, { method: 'POST' })
+  .then(r => r.json())
+  .then(() => { btn.closest('.alert-item').classList.add('alert-resolved'); btn.remove(); });
+}
+
+// Simulation control functions
+function startSimulation() {
+  fetch('/admin/simulation/start', { method: 'POST' })
+    .then(r => r.json())
+    .then(data => {
+      if (data.status === 'ok') {
+        simulationActive = true;
+        updateSimulationUI(true);
+        // Refresh dashboard to show simulation data
+        refreshDashboardData();
+      }
+    })
+    .catch(err => console.error('Start simulation error:', err));
+}
+
+function stopSimulation() {
+  fetch('/admin/simulation/stop', { method: 'POST' })
+    .then(r => r.json())
+    .then(data => {
+      if (data.status === 'ok') {
+        simulationActive = false;
+        updateSimulationUI(false);
+        // Refresh dashboard to clear simulation data
+        refreshDashboardData();
+      }
+    })
+    .catch(err => console.error('Stop simulation error:', err));
+}
+
+function updateSimulationUI(active) {
+  const statusDiv = document.getElementById('simulation-status');
+  const statusText = document.getElementById('sim-status-text');
+  const statusDot = statusDiv.querySelector('.sim-status-dot');
+  
+  if (active) {
+    statusDiv.className = 'sim-status sim-status-active';
+    statusDot.className = 'sim-status-dot active';
+    statusText.textContent = 'Simulation ACTIVE - Detection is ON | Hijack attempts will be generated';
+  } else {
+    statusDiv.className = 'sim-status sim-status-inactive';
+    statusDot.className = 'sim-status-dot inactive';
+    statusText.textContent = 'Simulation INACTIVE - Detection is OFF';
+  }
+}
+
+function refreshDashboardData() {
+  fetch('/api/admin/stats')
+    .then(r => r.json())
+    .then(data => {
+      // Update counts
+      document.getElementById('hijacked-count').textContent = data.hijacked_count;
+      document.getElementById('unresolved-count').textContent = data.unresolved_alerts;
+      
+      // Update alerts list
+      const alertsBody = document.getElementById('recent-alerts-body');
+      if (alertsBody && data.recent_alerts) {
+        if (data.recent_alerts.length === 0) {
+          alertsBody.innerHTML = '<p class="empty-row">No alerts yet</p>';
+        } else {
+          alertsBody.innerHTML = data.recent_alerts.map(alert => `
+            <div class="alert-item ${alert.resolved ? 'alert-resolved' : ''}" data-alert-id="${alert.id}">
+              <div class="alert-icon"><i class="fas fa-skull-crossbones"></i></div>
+              <div class="alert-body">
+                <div class="alert-header-row">
+                  <span class="alert-user">${escapeHtml(alert.username)}</span>
+                  <span class="alert-score chip-danger">${Math.round(alert.risk_score)}</span>
+                </div>
+                <div class="alert-reason">${escapeHtml(alert.reason.substring(0, 80))}${alert.reason.length > 80 ? '…' : ''}</div>
+                <div class="alert-time">${alert.timestamp ? alert.timestamp.substring(0, 16) : '—'}</div>
+              </div>
+              ${!alert.resolved ? `<button class="btn-xs btn-success" onclick="resolveAlert(${alert.id}, this)" title="Resolve"><i class="fas fa-check"></i></button>` : ''}
+            </div>
+          `).join('');
+        }
+      }
+      
+      // Update live sessions
+      const sessionsBody = document.getElementById('live-sessions-body');
+      if (sessionsBody && data.active_sessions) {
+        if (data.active_sessions.length === 0) {
+          sessionsBody.innerHTML = '<tr><td colspan="5" class="empty-row">No active sessions</td></tr>';
+        } else {
+          sessionsBody.innerHTML = data.active_sessions.map(s => `
+            <tr data-session-id="${s.session_id}">
+              <td>${escapeHtml(s.username || '—')}</td>
+              <td class="mono">${escapeHtml(s.ip_address)}</td>
+              <td>${escapeHtml(s.browser)}</td>
+              <td>
+                <span class="risk-chip ${s.risk_score >= 60 ? 'chip-danger' : (s.risk_score >= 30 ? 'chip-warning' : 'chip-safe')}">
+                  ${Math.round(s.risk_score)}
+                </span>
+              </td>
+              <td>
+                <button class="btn-xs btn-danger" onclick="terminateSession('${s.session_id}', this)">
+                  <i class="fas fa-ban"></i>
+                </button>
+              </td>
+            </tr>
+          `).join('');
+        }
+      }
+    })
+    .catch(err => console.error('Refresh error:', err));
+}
+
+function escapeHtml(text) {
+  if (!text) return '';
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+// Attach event listeners
+document.getElementById('start-simulation').addEventListener('click', startSimulation);
+document.getElementById('stop-simulation').addEventListener('click', stopSimulation);
+
+// Check simulation status on load
+fetch('/admin/simulation/status')
+  .then(r => r.json())
+  .then(data => {
+    simulationActive = data.active;
+    updateSimulationUI(data.active);
+    if (data.active) {
+      refreshDashboardData();
+    }
+  })
+  .catch(() => {});
+
+// Auto-refresh when simulation is active
+let refreshInterval = null;
+setInterval(() => {
+  if (simulationActive) {
+    refreshDashboardData();
+  }
+}, 5000);
+</script>
+{% endblock %}

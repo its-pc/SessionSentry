@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Settings — SessionSentry{% endblock %}
+{% block page_title %}Behavioral Analysis Settings{% endblock %}
+
+{% block content %}
+<div class="page-grid">
+  <div class="card card-full-width">
+    <div class="card-header">
+      <span class="card-title"><i class="fas fa-gear"></i> Behavioral Feature Controls</span>
+    </div>
+    <div class="card-body">
+      <div class="settings-grid" id="feature-settings-grid">
+        {% for feature in feature_columns %}
+        <div class="setting-item">
+          <div class="setting-info">
+            <div class="setting-name">{{ feature.replace('_', ' ').title() }}</div>
+            <div class="setting-desc">Enable or disable this behavioral signal in detection.</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" class="feature-toggle" data-feature="{{ feature }}" {% if feature_settings.get(feature, True) %}checked{% endif %}/>
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        {% endfor %}
+      </div>
+      <p class="settings-note"><i class="fas fa-circle-info"></i> Changes apply instantly to real-time detection.</p>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const toggles = document.querySelectorAll('.feature-toggle');
+
+function collectSettings() {
+  const payload = {};
+  toggles.forEach(t => {
+    payload[t.dataset.feature] = t.checked;
+  });
+  return payload;
+}
+
+function saveSettings() {
+  fetch('/api/settings', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(collectSettings())
+  })
+  .then(r => r.json())
+  .then(() => {})
+  .catch(() => {});
+}
+
+toggles.forEach(toggle => {
+  toggle.addEventListener('change', saveSettings);
+});
+</script>
+{% endblock %}

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{% block title %}SessionSentry{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"/>
+  {% if current_user and current_user.role == 'admin' %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin-dark.css') }}"/>
+  {% endif %}
+  {% block extra_head %}{% endblock %}
+</head>
+<body {% if current_user and current_user.role == 'admin' %}class="admin-theme"{% endif %}>
+  {% if current_user %}
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon"><i class="fas fa-comments"></i></div>
+      <div class="brand-text">
+        {% if current_user.role == 'admin' %}
+          <span class="brand-name">Session<span class="accent">Sentry</span></span>
+          <span class="brand-tagline">AI Security Monitor</span>
+        {% else %}
+          <span class="brand-name">Thread<span class="accent">Nest</span></span>
+          <span class="brand-tagline">Community Home</span>
+        {% endif %}
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      {% if current_user.role == 'admin' %}
+      <div class="nav-section-label">Admin Panel</div>
+      <a href="{{ url_for('admin_dashboard') }}" class="nav-link {% if request.endpoint == 'admin_dashboard' %}active{% endif %}">
+        <i class="fas fa-chart-pie"></i><span>Overview</span>
+      </a>
+      <a href="{{ url_for('admin_sessions') }}" class="nav-link {% if request.endpoint == 'admin_sessions' %}active{% endif %}">
+        <i class="fas fa-users"></i><span>Sessions</span>
+      </a>
+      <a href="{{ url_for('admin_alerts') }}" class="nav-link {% if request.endpoint == 'admin_alerts' %}active{% endif %}">
+        <i class="fas fa-bell"></i><span>Alerts</span>
+        <span class="badge-count" id="alert-count">—</span>
+      </a>
+      <a href="{{ url_for('settings') }}" class="nav-link {% if request.endpoint == 'settings' %}active{% endif %}">
+        <i class="fas fa-gear"></i><span>Settings</span>
+      </a>
+      {% else %}
+      <div class="nav-section-label">Explore</div>
+      <a href="{{ url_for('dashboard') }}" class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}">
+        <i class="fas fa-house"></i><span>Home</span>
+      </a>
+      <a href="{{ url_for('profile') }}" class="nav-link {% if request.endpoint == 'profile' %}active{% endif %}">
+        <i class="fas fa-user-circle"></i><span>Profile</span>
+      </a>
+
+      <div class="nav-divider"></div>
+      <div class="nav-section-label">Categories</div>
+      <a href="{{ url_for('dashboard', category='Education') }}" class="nav-link">
+        <i class="fas fa-graduation-cap"></i><span>Education</span>
+      </a>
+      <a href="{{ url_for('dashboard', category='Sports') }}" class="nav-link">
+        <i class="fas fa-football"></i><span>Sports</span>
+      </a>
+      <a href="{{ url_for('dashboard', category='Technology') }}" class="nav-link">
+        <i class="fas fa-microchip"></i><span>Technology</span>
+      </a>
+      <a href="{{ url_for('dashboard', category='Memes') }}" class="nav-link">
+        <i class="fas fa-face-laugh"></i><span>Memes</span>
+      </a>
+      <a href="{{ url_for('dashboard', category='Discussions') }}" class="nav-link">
+        <i class="fas fa-comments"></i><span>Discussions</span>
+      </a>
+      {% endif %}
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="user-chip">
+        <div class="user-avatar">{{ current_user.username[0]|upper }}</div>
+        <div class="user-info">
+          <span class="user-name">{{ current_user.username }}</span>
+          <span class="user-role {{ current_user.role }}">{{ current_user.role }}</span>
+        </div>
+      </div>
+      <a href="{{ url_for('logout') }}" class="btn-logout"><i class="fas fa-right-from-bracket"></i></a>
+    </div>
+  </aside>
+
+  <div class="main-wrapper">
+    <header class="topbar">
+      <button class="sidebar-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+      <div class="topbar-title">{% block page_title %}Dashboard{% endblock %}</div>
+      <div class="topbar-right">
+        {% if current_user.role == 'admin' %}
+        <div class="threat-indicator">
+          <span class="threat-dot"></span>
+          <span class="threat-label">Monitoring</span>
+        </div>
+        {% endif %}
+        <div class="topbar-time" id="topbar-time"></div>
+      </div>
+    </header>
+
+    <main class="content-area">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for cat, msg in messages %}
+          <div class="flash-msg flash-{{ cat }}">
+            <i class="fas fa-circle-info"></i>
+            {{ msg }}
+            <button onclick="this.parentElement.remove()">×</button>
+          </div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+
+  {% else %}
+  <div class="auth-bg">
+    {% block auth_content %}{% endblock %}
+  </div>
+  {% endif %}
+
+  <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

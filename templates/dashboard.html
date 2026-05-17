@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}Home — ThreadNest{% endblock %}
+{% block page_title %}Home{% endblock %}
+
+{% block content %}
+<div class="social-layout">
+
+  <div class="social-main">
+    <div class="feed-topbar-card">
+      <div>
+        <h2 class="feed-heading">Home Feed</h2>
+        <p class="feed-subheading">Discover trending posts, memes, and discussions.</p>
+      </div>
+      <div class="status-badge badge-safe">Live Feed</div>
+    </div>
+
+    {% for post in posts %}
+    <div class="post-card">
+      <div class="post-header">
+        <div class="post-user">
+          <div class="post-avatar">{{ post.avatar }}</div>
+          <div>
+            <div class="post-username">{{ post.username }}</div>
+            <div class="post-category">{{ post.category }}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="post-content">
+        <h3 class="post-title">{{ post.title }}</h3>
+        <p class="post-text">{{ post.text }}</p>
+        <img src="{{ post.image }}" alt="{{ post.title }}" class="post-image">
+      </div>
+
+      <div class="post-actions">
+        <button class="vote-btn"><i class="fas fa-arrow-up"></i> {{ post.likes }}</button>
+        <div class="comment-count"><i class="fas fa-comment"></i> {{ post.comments|length }} comments</div>
+      </div>
+
+      <div class="comment-preview">
+        {% for c in post.comments[:3] %}
+        <div class="comment-line">{{ c }}</div>
+        {% endfor %}
+      </div>
+    </div>
+    {% else %}
+    <div class="card">
+      <div class="card-body">
+        <p class="empty-row">No posts available in this category.</p>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="social-side">
+    <div class="card card-session-status {% if db_sess.is_hijacked %}card-danger{% elif db_sess.risk_score >= 30 %}card-warning{% else %}card-safe{% endif %}">
+      <div class="card-header">
+        <span class="card-title"><i class="fas fa-user-shield"></i> Account Session</span>
+        <span class="status-badge {% if db_sess.is_hijacked %}badge-danger{% elif db_sess.risk_score >= 30 %}badge-warning{% else %}badge-safe{% endif %}">
+          {% if db_sess.is_hijacked %}Hijacked{% elif db_sess.risk_score >= 30 %}Suspicious{% else %}Secure{% endif %}
+        </span>
+      </div>
+      <div class="card-body">
+        <div class="risk-meter-section">
+          <div class="risk-label-row">
+            <span>Risk Score</span>
+            <span class="risk-value {% if db_sess.risk_score >= 60 %}risk-high{% elif db_sess.risk_score >= 30 %}risk-med{% else %}risk-low{% endif %}">
+              {{ db_sess.risk_score | round(1) }}
+            </span>
+          </div>
+          <div class="risk-bar-track">
+            <div class="risk-bar-fill" style="width: {{ [db_sess.risk_score, 100] | min }}%; background: {% if db_sess.risk_score >= 60 %}var(--danger){% elif db_sess.risk_score >= 30 %}var(--warning){% else %}var(--success){% endif %}"></div>
+          </div>
+        </div>
+
+        {% if db_sess.risk_reason %}
+        <div class="risk-reason">
+          <i class="fas fa-triangle-exclamation"></i> {{ db_sess.risk_reason }}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title"><i class="fas fa-list-ul"></i> Recent Activity</span>
+      </div>
+      <div class="card-body">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Time</th>
+              <th>Page</th>
+              <th>Method</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for log in recent_logs[:6] %}
+            <tr>
+              <td class="mono">{{ log.timestamp[11:19] if log.timestamp else '—' }}</td>
+              <td class="mono">{{ log.page }}</td>
+              <td><span class="method-badge method-{{ log.request_method }}">{{ log.request_method }}</span></td>
+            </tr>
+            {% else %}
+            <tr><td colspan="3" class="empty-row">No activity yet</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
