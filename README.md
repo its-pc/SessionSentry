@@ -23,7 +23,7 @@ Instead of simple IP-based rules, it monitors **19 behavioral features** in real
 ![Behavioural_Features](screenshots/Behavioural_Features.png)
 
 ## 👤 Victim Dashboard
-![Victim Dashboard](screenshots/Victim_dashboard.png)
+![Victim_dashboard](screenshots/Victim_dashboard.png)
 
 
 ## Quick Start (Step-by-Step)
@@ -98,38 +98,6 @@ Model saved: ml/rf_model.pkl
 
 ```bash
 python app.py
-
-
-### User Pages
-| URL | Description |
-|-----|-------------|
-| `http://127.0.0.1:5000/login` | Login page |
-| `http://127.0.0.1:5000/register` | Register new account |
-| `http://127.0.0.1:5000/dashboard` | User dashboard with session status |
-| `http://127.0.0.1:5000/profile` | User profile + session history |
-| `http://127.0.0.1:5000/logout` | Logout |
-
-### Admin Pages
-| URL | Description |
-|-----|-------------|
-| `http://127.0.0.1:5000/admin` | Admin security overview + charts |
-| `http://127.0.0.1:5000/admin/sessions` | All sessions management |
-| `http://127.0.0.1:5000/admin/alerts` | Security alerts |
-
-
-
-## Demo: Simulate a Hijacking Attack
-
-### Method 1: Built-in Simulator (Easiest)
-1. Log in as **admin**
-2. Go to Admin Dashboard (`/admin`)
-3. Scroll to **"Attack Simulation"** at the bottom
-4. Type `alice` in the username field
-5. Click **"Simulate Hijack Attack"**
-6. Watch the alert appear and dashboard update!
-
-### Method 2: Manual (With Burp Suite)
-See `attacks/burp_simulation_notes.txt` for detailed instructions.
 
 
 ## ML Features (19 Total)
