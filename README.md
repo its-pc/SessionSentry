@@ -13,7 +13,7 @@ Instead of simple IP-based rules, it monitors **19 behavioral features** in real
 ![Admin Dashboard](screenshots/AdminDashboard1.png)
 ![Admin Dashboard](screenshots/AdminDashboard2.png)
 
-## Alerts
+## Attack Detection Alerts
 ![Alerts](screenshots/Alerts.png)
 
 ## Sessions
@@ -22,9 +22,8 @@ Instead of simple IP-based rules, it monitors **19 behavioral features** in real
 ## Behavioural_Features
 ![Behavioural_Features](screenshots/Behavioural_Features.png)
 
-## Victim Dashboard
+## 👤 Victim Dashboard
 ![Victim Dashboard](screenshots/Victim Dashboard.png)
-
 
 
 ## Quick Start (Step-by-Step)
