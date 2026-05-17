@@ -44,7 +44,7 @@ venv\Scripts\activate
 
 # OR activate it (Mac/Linux)
 source venv/bin/activate
-```
+
 
 You should see `(venv)` appear at the start of the terminal line.
 
@@ -54,7 +54,7 @@ You should see `(venv)` appear at the start of the terminal line.
 
 ```bash
 pip install flask pandas numpy scikit-learn joblib
-```
+
 
 Wait for installation to finish (1–2 minutes).
 
@@ -64,7 +64,7 @@ Wait for installation to finish (1–2 minutes).
 
 ```bash
 python ml/train_model.py
-```
+
 
 This will:
 - Generate 700 synthetic sessions (500 normal + 200 hijacked)
@@ -73,7 +73,7 @@ This will:
 - Save `ml/rf_model.pkl`
 
 Expected output:
-```
+
 Accuracy    100.00%
 Precision   100.00%
 Recall      100.00%
@@ -86,7 +86,7 @@ Model saved: ml/rf_model.pkl
 
 ```bash
 python app.py
-```
+
 
 ### User Pages
 | URL | Description |
@@ -135,7 +135,7 @@ See `attacks/burp_simulation_notes.txt` for detailed instructions.
 
 ## 🔍 How Detection Works
 
-```
+
 User Request Arrives
         ↓
 Log to database (ip, browser, page, time, method)
@@ -152,7 +152,7 @@ If Hijacked:
   → Update session risk_score
   → Create alert
   → Show in admin dashboard
-```
+
 
 ## 🛑 Troubleshooting
 
