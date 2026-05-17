@@ -23,7 +23,7 @@ Instead of simple IP-based rules, it monitors **19 behavioral features** in real
 ![Behavioural_Features](screenshots/Behavioural_Features.png)
 
 ## 👤 Victim Dashboard
-![Victim Dashboard](screenshots/Victim_dashboard.png)
+![victim_dashboard](screenshots/Victim_dashboard.png)
 
 
 ## Quick Start (Step-by-Step)
